@@ -1,9 +1,16 @@
 {
-  "name": "janganana-2027-dify",
+  "name": "janganana-2027",
   "version": "1.0.0",
   "private": true,
   "description": "National Digital Demographics & Dify Agent Enumeration Platform",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "test": "jest",
+    "lint": "eslint public/app.js"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "eslint": "^8.57.0"
   }
 }
