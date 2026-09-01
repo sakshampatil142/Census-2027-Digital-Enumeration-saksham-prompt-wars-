@@ -1,1 +1,9 @@
-
+{
+  "name": "janganana-2027",
+  "version": "1.0.0",
+  "private": true,
+  "description": "National Digital Demographics & AI Enumeration Platform",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
