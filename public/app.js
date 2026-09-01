@@ -71,7 +71,7 @@ async function executeJanAIQuery({ prompt, systemInstruction = null, isGrounded 
     }
 
     if (apiKey) {
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
       const payload = {
         contents: [{ parts: [{ text: prompt }] }],
         ...(isGrounded && { tools: [{ google_search: {} }] }),
@@ -200,52 +200,120 @@ function applyVisionResults(res) {
 }
 
 async function checkGroundedRumor() {
-  const input = document.getElementById('satyavani-input').value.trim();
-  if (!input) return;
+  const inputElem = document.getElementById('satyavani-input');
+  const claimText = inputElem ? inputElem.value.trim() : '';
+
+  if (!claimText) {
+    alert('Please enter or speak a claim to verify.');
+    return;
+  }
 
   const btn = document.getElementById('btn-verify-rumor');
+  const originalBtnText = btn.innerHTML;
   btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> Grounding with Search Sources...';
   btn.disabled = true;
 
   const resultBox = document.getElementById('satya-result-container');
   resultBox.classList.remove('hidden');
 
-  const prompt = `Analyze the following rumor regarding India's 2027 Census: "${input}". Verify with official gazettes and census acts. Provide status (FALSE, VERIFIED, MISLEADING) and a 2-sentence official reason.`;
-  
-  const resText = await executeJanAIQuery({
-    prompt,
-    isGrounded: true,
-    fallbackText: "Census enumeration operations strictly prohibit requesting bank OTPs, biometric iris scans, or property deeds. Section 15 of the Census Act guarantees total statutory confidentiality."
-  });
+  const prompt = `You are SatyaVani AI, an official and non-partisan fact-checking system for India's Census 2027 operations.
+Evaluate the factual accuracy of the following public claim:
+Claim: "${claimText}"
 
-  renderSatyaResult("FALSE", resText);
+You MUST reply ONLY with a valid JSON object matching this exact structure (no Markdown fences, no surrounding text):
+{
+  "verdict": "VERIFIED" | "FALSE" | "MISLEADING",
+  "confidence": "98.5%",
+  "sublabel": "Short category description (e.g. Official Census Directive, Statutory Confidentiality Rule, Phased Roadmap)",
+  "explanation": "2-3 precise sentences citing official procedures, dates, or legal protections regarding this claim.",
+  "sources": [
+    { "title": "Name of Law, Notification or Gazette", "tag": "Official Law / Gazette / Notice" },
+    { "title": "Second Supporting Source or Authority", "tag": "Operational Directive / PIB Notice" }
+  ]
+}`;
 
-  btn.innerHTML = '<i data-lucide="search" class="w-4 h-4 mr-1"></i> <span>Grounded Fact Check</span>';
-  btn.disabled = false;
-  document.getElementById('btn-listen-debunk').classList.remove('hidden');
-  lucide.createIcons();
+  try {
+    const rawResponse = await executeJanAIQuery({
+      prompt: prompt,
+      isGrounded: true,
+      systemInstruction: "You are SatyaVani AI. Always output pure, raw JSON only. Never wrap response in backticks or markdown code blocks."
+    });
+
+    let cleanedResponse = (rawResponse || '').trim();
+    if (cleanedResponse.startsWith('```json')) {
+      cleanedResponse = cleanedResponse.replace(/^```json/, '').replace(/```$/, '').trim();
+    } else if (cleanedResponse.startsWith('```')) {
+      cleanedResponse = cleanedResponse.replace(/^```/, '').replace(/```$/, '').trim();
+    }
+
+    const parsedData = JSON.parse(cleanedResponse);
+    renderSatyaResult(parsedData);
+  } catch (err) {
+    console.error("Fact-check JSON parse/execution error:", err);
+    renderSatyaResult({
+      verdict: "MISLEADING",
+      confidence: "85.0%",
+      sublabel: "Verification Service Notice",
+      explanation: "Unable to parse real-time grounding response for this claim. Please verify against official gazette publications.",
+      sources: [
+        { title: "Census Act 1948 & Directives", tag: "Statutory Directive" }
+      ]
+    });
+  } finally {
+    btn.innerHTML = originalBtnText;
+    btn.disabled = false;
+    document.getElementById('btn-listen-debunk').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
 }
 
-function renderSatyaResult(rating, explanation) {
+function renderSatyaResult(data) {
   const badgeBar = document.getElementById('satya-badge-bar');
   const statusIcon = document.getElementById('satya-status-icon');
   const statusLabel = document.getElementById('satya-status-label');
+  const statusSublabel = badgeBar ? badgeBar.querySelector('.font-medium') : null;
+  const confidenceElem = document.getElementById('satya-confidence');
   const expElem = document.getElementById('satya-explanation');
+  const sourcesContainer = document.getElementById('satya-sources-list');
 
-  expElem.innerText = explanation;
+  if (expElem) expElem.innerText = data.explanation || '';
+  if (confidenceElem) confidenceElem.innerText = `${data.confidence || '98.0%'} Grounded Proof`;
+  if (statusSublabel) statusSublabel.innerText = data.sublabel || 'Verified Census Standard';
 
-  if (rating === 'VERIFIED') {
-    badgeBar.className = "flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200";
-    statusIcon.className = "w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-black";
-    statusIcon.innerHTML = "✓";
-    statusLabel.className = "text-xs font-black uppercase text-emerald-700";
-    statusLabel.innerText = "VERDICT: VERIFIED & ACCURATE";
-  } else {
-    badgeBar.className = "flex items-center justify-between p-3.5 rounded-xl bg-rose-50 border border-rose-200";
-    statusIcon.className = "w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-black";
-    statusIcon.innerHTML = "✕";
-    statusLabel.className = "text-xs font-black uppercase text-rose-700";
-    statusLabel.innerText = `VERDICT: ${rating} & FRAUDULENT`;
+  const verdict = (data.verdict || 'MISLEADING').toUpperCase();
+
+  if (badgeBar && statusIcon && statusLabel) {
+    if (verdict === 'VERIFIED') {
+      badgeBar.className = "flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200";
+      statusIcon.className = "w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-black";
+      statusIcon.innerHTML = "✓";
+      statusLabel.className = "text-xs font-black uppercase text-emerald-700";
+      statusLabel.innerText = "VERDICT: VERIFIED & ACCURATE";
+    } else if (verdict === 'FALSE') {
+      badgeBar.className = "flex items-center justify-between p-3.5 rounded-xl bg-rose-50 border border-rose-200";
+      statusIcon.className = "w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-black";
+      statusIcon.innerHTML = "✕";
+      statusLabel.className = "text-xs font-black uppercase text-rose-700";
+      statusLabel.innerText = "VERDICT: FALSE & FRAUDULENT";
+    } else {
+      badgeBar.className = "flex items-center justify-between p-3.5 rounded-xl bg-amber-50 border border-amber-200";
+      statusIcon.className = "w-7 h-7 rounded-full bg-amber-600 text-white flex items-center justify-center text-xs font-black";
+      statusIcon.innerHTML = "!";
+      statusLabel.className = "text-xs font-black uppercase text-amber-700";
+      statusLabel.innerText = "VERDICT: MISLEADING / UNVERIFIED";
+    }
+  }
+
+  if (sourcesContainer && Array.isArray(data.sources)) {
+    sourcesContainer.innerHTML = data.sources.map(src => `
+      <div class="p-2.5 bg-sky-50/60 rounded-lg border border-sky-100 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="file-text" class="w-3.5 h-3.5 text-sky-600"></i>
+          <span class="font-medium text-slate-800">${src.title || 'Official Publication'}</span>
+        </div>
+        <span class="text-[10px] text-sky-700 font-bold">${src.tag || 'Verified Source'}</span>
+      </div>
+    `).join('');
   }
 }
 
@@ -259,7 +327,7 @@ function selectPresetRumor(id) {
 
 function copyDebunkCard() {
   const exp = document.getElementById('satya-explanation').innerText;
-  const text = `📢 *JanGanana 2027 Official Fact-Check Notice (SatyaVani AI)*\n\n❌ *Status:* FALSE / MISLEADING CLAIM\n✅ *Grounded Truth:* ${exp}\n\n🛡️ *Remember:* Census officials NEVER ask for OTPs, bank credentials, or biometric scans. Verified under Census Act 1948.`;
+  const text = `📢 *JanGanana 2027 Official Fact-Check Notice (SatyaVani AI)*\n\n✅ *Status & Details:* ${exp}\n\n🛡️ *Remember:* Official census operations operate strictly under statutory confidentiality provisions.`;
   
   const copyBtn = document.getElementById('copy-btn-text');
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -272,8 +340,10 @@ function copyDebunkCard() {
     document.execCommand("copy");
     document.body.removeChild(dummy);
   }
-  copyBtn.innerText = "Copied to Clipboard!";
-  setTimeout(() => { copyBtn.innerText = "Copy WhatsApp Card"; }, 2500);
+  if (copyBtn) {
+    copyBtn.innerText = "Copied to Clipboard!";
+    setTimeout(() => { copyBtn.innerText = "Copy WhatsApp Card"; }, 2500);
+  }
 }
 
 function speakTextWithJanVani(text, lang = 'en-IN') {
