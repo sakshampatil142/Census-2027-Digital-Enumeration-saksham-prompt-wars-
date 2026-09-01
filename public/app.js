@@ -200,7 +200,7 @@ function applyVisionResults(res) {
 }
 
 // ========================================================
-// REWRITTEN DYNAMIC SATYAVANI FACT-CHECK HANDLER
+// TWO-STEP FACT CHECKER (Grounding -> Clean JSON)
 // ========================================================
 async function checkGroundedRumor() {
   const inputElem = document.getElementById('satyavani-input');
@@ -219,45 +219,31 @@ async function checkGroundedRumor() {
   const resultBox = document.getElementById('satya-result-container');
   resultBox.classList.remove('hidden');
 
-  const systemInstruction = `You are SatyaVani AI, an official and authoritative fact-checking verification engine for India's Census 2027 operations.
-Your job is to evaluate public rumors, WhatsApp claims, and statements about the digital census.
-Respond with ONLY a valid JSON object, no markdown formatting, no code fences, no explanatory text before or after — just the raw JSON:
-{
-  "verdict": "VERIFIED" | "FALSE" | "MISLEADING",
-  "confidence": "98.5%",
-  "sublabel": "Short category description (e.g. Official Gazette Regulation, Operational Roadmap, Statutory Confidentiality Rule)",
-  "explanation": "2-3 precise sentences explaining the fact-check result with official legal/operational context.",
-  "sources": [
-    { "title": "Name of Law, Regulation, or Gazette Notice", "tag": "Official Law / Gazette / Notice" },
-    { "title": "Secondary Reference", "tag": "Operational Directive / PIB Notice" }
-  ]
-}`;
-
-  const prompt = `Evaluate the factual accuracy of this public claim regarding India's Census 2027:
-Claim: "${claimText}"
-
-Output only the single valid JSON object.`;
-
   try {
-    const rawResponse = await executeJanAIQuery({
-      prompt: prompt,
-      isGrounded: true,
-      systemInstruction: systemInstruction
+    const response = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'factCheck',
+        prompt: claimText
+      })
     });
 
-    let text = (rawResponse || '').trim();
-
-    // 1. Remove markdown code fence blocks if present
-    text = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
-
-    // 2. Extract strictly the {...} JSON object from surrounding text
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON object structure found in response.');
+    if (!response.ok) {
+      throw new Error(`Server returned status ${response.status}`);
     }
 
-    const cleanedJsonStr = jsonMatch[0];
-    const parsedData = JSON.parse(cleanedJsonStr);
+    const data = await response.json();
+    let text = (data.text || '').trim();
+
+    text = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No valid JSON object found in response.');
+    }
+
+    const parsedData = JSON.parse(jsonMatch[0]);
 
     if (!parsedData.verdict || !parsedData.explanation) {
       throw new Error('Parsed JSON is missing required fields.');
@@ -265,12 +251,12 @@ Output only the single valid JSON object.`;
 
     renderSatyaResult(parsedData);
   } catch (err) {
-    console.error("Fact-check JSON parse/execution error:", err);
+    console.error("Two-step fact check error:", err);
     renderSatyaResult({
       verdict: "MISLEADING",
       confidence: "85.0%",
       sublabel: "Verification Service Notice",
-      explanation: "Unable to parse real-time grounding response for this claim. Please verify against official gazette publications.",
+      explanation: "Unable to verify this specific statement against official notifications. Please verify directly with official gazette publications.",
       sources: [
         { title: "Census Act 1948 & Directives", tag: "Statutory Directive" }
       ]
