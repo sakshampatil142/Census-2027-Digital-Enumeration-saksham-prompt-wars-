@@ -1,8 +1,8 @@
 {
-  "name": "janganana-2027",
+  "name": "janganana-2027-dify",
   "version": "1.0.0",
   "private": true,
-  "description": "National Digital Demographics & AI Enumeration Platform",
+  "description": "National Digital Demographics & Dify Agent Enumeration Platform",
   "scripts": {
     "dev": "vercel dev"
   }
