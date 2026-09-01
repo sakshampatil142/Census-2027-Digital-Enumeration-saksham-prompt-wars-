@@ -1,1 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JanGanana 2027 | National Digital Demographics & AI Enumeration Platform</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '"Noto Sans Devanagari"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              saffron: '#FF671F',
+              emerald: '#046A38',
+              navy: '#0B132B',
+              indigo: '#1C2541',
+              accent: '#3A506B',
+              lightBg: '#F8FAFC',
+              cardBg: '#FFFFFF',
+              border: '#E2E8F0',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .glass-card {
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(226, 232, 240, 0.85);
+    }
+    .tricolor-bar {
+      background: linear-gradient(90deg, #FF671F 33.3%, #FFFFFF 33.3%, #FFFFFF 66.6%, #046A38 66.6%);
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .waveform-bar {
+      animation: wave 1.2s ease-in-out infinite alternate;
+    }
+    @keyframes wave {
+      0% { height: 4px; }
+      100% { height: 24px; }
+    }
+    @keyframes scan {
+      0% { top: 0%; opacity: 0.8; }
+      50% { opacity: 0.3; }
+      100% { top: 100%; opacity: 0.8; }
+    }
+    .scanner-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #FF671F;
+      box-shadow: 0 0 10px #FF671F, 0 0 20px #FF671F;
+      animation: scan 2s linear infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans flex flex-col min-h-screen selection:bg-orange-100 selection:text-orange-900">
+
+  <div class="tricolor-bar fixed top-0 left-0 right-0 z-50"></div>
+  
+  <header class="sticky top-1 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('home')">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-emerald via-emerald-600 to-brand-saffron flex items-center justify-center text-white font-bold shadow-md">
+            <i data-lucide="users" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900">JanGanana<span class="text-brand-saffron">2027</span></span>
+              <span class="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <i data-lucide="sparkles" class="w-3 h-3 mr-1"></i> Multimodal AI Ready
+              </span>
+            </div>
+            <p class="text-[10px] text-slate-500 font-medium tracking-wide leading-none" data-i18n="tagline">National Digital Demographics & AI Enumeration Platform</p>
+          </div>
+        </div>
+
+        <nav class="hidden lg:flex items-center space-x-1">
+          <button onclick="switchTab('wizard')" class="nav-tab-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-saffron hover:bg-orange-50 transition" data-target="wizard">
+            <i data-lucide="edit-3" class="w-4 h-4 inline mr-1"></i> <span data-i18n="nav_self_enum">Self-Enumeration</span>
+          </button>
+          <button onclick="switchTab('satyavani')" class="nav-tab-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-saffron hover:bg-orange-50 transition" data-target="satyavani">
+            <i data-lucide="shield-check" class="w-4 h-4 inline mr-1"></i> <span data-i18n="nav_satyavani">SatyaVani AI (Fact Checker)</span>
+          </button>
+          <button onclick="switchTab('enumerator')" class="nav-tab-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-saffron hover:bg-orange-50 transition" data-target="enumerator">
+            <i data-lucide="tablet" class="w-4 h-4 inline mr-1"></i> <span data-i18n="nav_enumerator">Enumerator Co-Pilot</span>
+          </button>
+          <button onclick="switchTab('schedule')" class="nav-tab-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-saffron hover:bg-orange-50 transition" data-target="schedule">
+            <i data-lucide="calendar" class="w-4 h-4 inline mr-1"></i> <span data-i18n="nav_schedule">Schedule & Pincode</span>
+          </button>
+          <button onclick="switchTab('insights')" class="nav-tab-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-saffron hover:bg-orange-50 transition" data-target="insights">
+            <i data-lucide="bar-chart-3" class="w-4 h-4 inline mr-1"></i> <span data-i18n="nav_insights">Demographics AI</span>
+          </button>
+        </nav>
+
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <button onclick="toggleVoiceAccessibilityModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold rounded-lg border border-amber-200 transition" title="JanVani Voice Accessibility">
+            <i data-lucide="volume-2" class="w-3.5 h-3.5 text-amber-600"></i>
+            <span class="hidden sm:inline">JanVani Audio</span>
+          </button>
+
+          <div class="relative">
+            <select id="langSelector" onchange="changeLanguage(this.value)" class="bg-slate-100 border border-slate-300 text-slate-700 text-xs sm:text-sm font-medium rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-brand-saffron focus:outline-none cursor-pointer">
+              <option value="en">English (India)</option>
+              <option value="hi">हिंदी (Hindi)</option>
+              <option value="ta">தமிழ் (Tamil)</option>
+              <option value="bn">বাংলা (Bengali)</option>
+              <option value="mr">मराठी (Marathi)</option>
+              <option value="te">తెలుగు (Telugu)</option>
+            </select>
+          </div>
+
+          <button onclick="openServerlessModal()" class="flex items-center space-x-1.5 px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition" title="Serverless /api/gemini Architecture & Key Privacy">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="hidden md:inline">Serverless Proxy</span>
+          </button>
+          
+          <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+            <i data-lucide="menu" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="mobileMenu" class="hidden lg:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-4 space-y-1">
+      <button onclick="switchTab('wizard'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-orange-50 hover:text-brand-saffron flex items-center">
+        <i data-lucide="edit-3" class="w-4 h-4 mr-2"></i> Self-Enumeration Wizard
+      </button>
+      <button onclick="switchTab('satyavani'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-orange-50 hover:text-brand-saffron flex items-center">
+        <i data-lucide="shield-check" class="w-4 h-4 mr-2"></i> SatyaVani Fact-Checker
+      </button>
+      <button onclick="switchTab('enumerator'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-orange-50 hover:text-brand-saffron flex items-center">
+        <i data-lucide="tablet" class="w-4 h-4 mr-2"></i> Enumerator Co-Pilot
+      </button>
+      <button onclick="switchTab('schedule'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-orange-50 hover:text-brand-saffron flex items-center">
+        <i data-lucide="calendar" class="w-4 h-4 mr-2"></i> Phased Schedule & Pincode
+      </button>
+      <button onclick="switchTab('insights'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-orange-50 hover:text-brand-saffron flex items-center">
+        <i data-lucide="bar-chart-3" class="w-4 h-4 mr-2"></i> Demographics AI Explorer
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <section id="tab-home" class="tab-content block space-y-8">
+      <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-navy via-slate-900 to-brand-indigo text-white p-8 md:p-12 shadow-xl border border-slate-800">
+        <div class="absolute -right-12 -top-12 w-80 h-80 bg-brand-saffron/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-12 -bottom-12 w-80 h-80 bg-brand-emerald/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 max-w-3xl space-y-5">
+          <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-orange-200">
+            <i data-lucide="cpu" class="w-3.5 h-3.5 text-brand-saffron"></i>
+            <span>Census 2027 • Next-Gen Digital Enumeration & Grounded AI</span>
+          </div>
+          
+          <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+            Counting 140 Crore Citizens with <br><span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-200 to-emerald-400">Multimodal Vision, Voice & Search Grounding</span>
+          </h1>
+
+          <p class="text-slate-300 text-base sm:text-lg max-w-2xl leading-relaxed">
+            Experience India's first AI-augmented demographics portal. Snap a dwelling photo to auto-detect housing materials, fact-check rumors against real web grounding, and self-enumerate in your mother tongue with zero PII exposure.
+          </p>
+
+          <div class="flex flex-wrap gap-3 pt-2">
+            <button onclick="switchTab('wizard')" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-brand-saffron to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold shadow-lg shadow-orange-500/25 flex items-center space-x-2 transition transform active:scale-95">
+              <i data-lucide="camera" class="w-5 h-5"></i>
+              <span>Launch Multimodal Wizard</span>
+            </button>
+            <button onclick="switchTab('satyavani')" class="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold backdrop-blur-md flex items-center space-x-2 transition">
+              <i data-lucide="search" class="w-5 h-5 text-emerald-400"></i>
+              <span>Fact-Check Rumor with Sources</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-8 border-t border-white/10 text-center">
+          <div class="p-3 bg-white/5 rounded-xl border border-white/5">
+            <div class="text-2xl font-bold text-amber-300">AI Vision</div>
+            <div class="text-xs text-slate-400">Auto Wall/Roof Material Scan</div>
+          </div>
+          <div class="p-3 bg-white/5 rounded-xl border border-white/5">
+            <div class="text-2xl font-bold text-emerald-300">Grounded</div>
+            <div class="text-xs text-slate-400">Real-Time Search Fact Proofs</div>
+          </div>
+          <div class="p-3 bg-white/5 rounded-xl border border-white/5">
+            <div class="text-2xl font-bold text-sky-300">JanVani Voice</div>
+            <div class="text-xs text-slate-400">Speech I/O in 6 Languages</div>
+          </div>
+          <div class="p-3 bg-white/5 rounded-xl border border-white/5">
+            <div class="text-2xl font-bold text-orange-300">Serverless</div>
+            <div class="text-xs text-slate-400">Zero Exposed Frontend Keys</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 hover:border-brand-saffron/50 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-orange-100 text-brand-saffron flex items-center justify-center font-bold">
+              <i data-lucide="camera" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 group-hover:text-brand-saffron transition">Multimodal Dwelling Vision</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              Upload or snap a picture of your house. JanAI Vision scans architectural structures and automatically pre-populates wall material, roof classification, and amenities.
+            </p>
+          </div>
+          <button onclick="switchTab('wizard')" class="mt-5 text-sm font-bold text-brand-saffron flex items-center hover:underline">
+            Test Vision Scanner <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 hover:border-brand-emerald/50 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-emerald-100 text-brand-emerald flex items-center justify-center font-bold">
+              <i data-lucide="search-check" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 group-hover:text-brand-emerald transition">Grounded Fact Debunker</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              Real-time Google Search grounding verifies viral claims against official notifications, producing authoritative citations and 1-click shareable debunk cards.
+            </p>
+          </div>
+          <button onclick="switchTab('satyavani')" class="mt-5 text-sm font-bold text-brand-emerald flex items-center hover:underline">
+            Check Viral Claims <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+          </button>
+        </div>
+
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 hover:border-sky-500/50 transition-all shadow-sm hover:shadow-md flex flex-col justify-between group">
+          <div class="space-y-3">
+            <div class="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center font-bold">
+              <i data-lucide="mic" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-900 group-hover:text-sky-600 transition">JanVani Voice Accessibility</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              Empowering citizens with low literacy or visual impairments. Speak your answers directly and listen to warm, spoken explanations in Hindi, Tamil, Telugu, and English.
+            </p>
+          </div>
+          <button onclick="toggleVoiceAccessibilityModal()" class="mt-5 text-sm font-bold text-sky-600 flex items-center hover:underline">
+            Open Voice Center <i data-lucide="arrow-right" class="w-4 h-4 ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-wizard" class="tab-content hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-brand-saffron">Module A</span>
+              <h2 class="text-2xl font-extrabold text-slate-900">Digital Self-Enumeration Wizard</h2>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500">Fill your household schedule with AI Multimodal Vision auto-detection and live voice assistance.</p>
+          </div>
+          
+          <div class="flex items-center space-x-2">
+            <button onclick="resetWizard()" class="text-xs text-slate-500 hover:text-slate-800 px-3 py-1.5 border rounded-lg hover:bg-slate-50">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 inline mr-1"></i> Reset
+            </button>
+            <button onclick="startVoiceInputForWizard()" class="text-xs font-bold px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-lg flex items-center hover:bg-amber-100">
+              <i data-lucide="mic" class="w-3.5 h-3.5 mr-1 text-amber-600"></i> Voice Input
+            </button>
+            <span class="text-xs font-bold px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg flex items-center">
+              <i data-lucide="lock" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i> Client Sandboxed
+            </span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-2 pt-2">
+          <div id="step-tab-1" class="border-t-4 border-brand-saffron pt-2 text-xs font-bold text-brand-saffron">
+            <span class="hidden sm:inline">1. </span>Household Profile
+          </div>
+          <div id="step-tab-2" class="border-t-4 border-slate-200 pt-2 text-xs font-bold text-slate-400">
+            <span class="hidden sm:inline">2. </span>AI Vision Dwelling
+          </div>
+          <div id="step-tab-3" class="border-t-4 border-slate-200 pt-2 text-xs font-bold text-slate-400">
+            <span class="hidden sm:inline">3. </span>Amenities & Assets
+          </div>
+          <div id="step-tab-4" class="border-t-4 border-slate-200 pt-2 text-xs font-bold text-slate-400">
+            <span class="hidden sm:inline">4. </span>Demographics & Token
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-8 bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+          
+          <div id="form-step-1" class="wizard-step space-y-5">
+            <div class="border-b pb-3">
+              <h3 class="text-lg font-bold text-slate-800">Step 1: Household Identification & Geographical Details</h3>
+              <p class="text-xs text-slate-500">Provide geographical mapping and household head information.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>State / Union Territory</span>
+                  <button type="button" onclick="triggerJanAIWithVoice('State/UT Selection', 'Indicates your primary residential jurisdiction for regional resource allocation.')" class="text-brand-saffron hover:underline text-[11px]"><i data-lucide="volume-2" class="w-3 h-3 inline"></i> Explain</button>
+                </label>
+                <select id="w_state" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron focus:outline-none">
+                  <option value="Maharashtra">Maharashtra (27)</option>
+                  <option value="Uttar Pradesh">Uttar Pradesh (09)</option>
+                  <option value="Tamil Nadu">Tamil Nadu (33)</option>
+                  <option value="West Bengal">West Bengal (19)</option>
+                  <option value="Karnataka">Karnataka (29)</option>
+                  <option value="Delhi">NCT of Delhi (07)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>6-Digit Pincode</span>
+                  <button type="button" onclick="triggerJanAIWithVoice('Pincode 6-digit Code', 'Used to assign enumeration block routes down to a 100-house cluster.')" class="text-brand-saffron hover:underline text-[11px]"><i data-lucide="volume-2" class="w-3 h-3 inline"></i> Explain</button>
+                </label>
+                <input type="text" id="w_pincode" value="411001" maxlength="6" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron focus:outline-none font-mono">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Full Name of Head of Household</span>
+                  <button type="button" onclick="triggerJanAIWithVoice('Head of Household', 'The person acknowledged by household members as the decision maker.')" class="text-brand-saffron hover:underline text-[11px]"><i data-lucide="volume-2" class="w-3 h-3 inline"></i> Explain</button>
+                </label>
+                <input type="text" id="w_head_name" placeholder="e.g. Ramesh Kulkarni" value="Ramesh Kulkarni" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Gender of Head</label>
+                <select id="w_head_gender" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Transgender">Transgender</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Usually Residing Persons Count</span>
+                  <button type="button" onclick="triggerJanAIWithVoice('Usually Residing Definition', 'Persons living in the household for at least 6 months.')" class="text-brand-saffron hover:underline text-[11px]"><i data-lucide="volume-2" class="w-3 h-3 inline"></i> Explain</button>
+                </label>
+                <input type="number" id="w_members_count" min="1" max="25" value="4" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Ownership Status of House</label>
+                <select id="w_ownership" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+                  <option value="Owned">Owned</option>
+                  <option value="Rented">Rented</option>
+                  <option value="Any Other">Any Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="form-step-2" class="wizard-step hidden space-y-5">
+            <div class="border-b pb-3 flex items-center justify-between">
+              <div>
+                <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                  <i data-lucide="camera" class="w-5 h-5 text-brand-saffron mr-2"></i>
+                  Step 2: AI Multimodal Dwelling & Material Inspector
+                </h3>
+                <p class="text-xs text-slate-500">Upload or choose a sample house photo for automated structural feature extraction.</p>
+              </div>
+              <span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded-md">Gemini Vision AI</span>
+            </div>
+
+            <div class="p-5 rounded-2xl bg-slate-900 text-white space-y-4 border border-slate-700 relative overflow-hidden">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <span class="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center">
+                    <i data-lucide="scan" class="w-4 h-4 mr-1"></i> Multimodal Photo Auto-Fill
+                  </span>
+                  <p class="text-xs text-slate-300 mt-0.5">Snap dwelling exterior or pick standard architectural profile:</p>
+                </div>
+
+                <div class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="selectSampleDwelling('pucca')" class="px-2.5 py-1 text-[11px] font-semibold bg-emerald-700/60 hover:bg-emerald-600 rounded-lg border border-emerald-500/40">Pucca (RCC)</button>
+                  <button type="button" onclick="selectSampleDwelling('semipucca')" class="px-2.5 py-1 text-[11px] font-semibold bg-amber-700/60 hover:bg-amber-600 rounded-lg border border-amber-500/40">Semi-Pucca</button>
+                  <button type="button" onclick="selectSampleDwelling('kutcha')" class="px-2.5 py-1 text-[11px] font-semibold bg-rose-700/60 hover:bg-rose-600 rounded-lg border border-rose-500/40">Kutcha</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+                <div class="sm:col-span-5 relative rounded-xl overflow-hidden bg-slate-950 border border-slate-700 aspect-video flex items-center justify-center group">
+                  <img id="dwelling-preview-img" src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=600&q=80" alt="Dwelling Exterior" class="w-full h-full object-cover">
+                  <div id="vision-scanner-line" class="hidden scanner-line"></div>
+                  
+                  <label for="house-file-upload" class="absolute bottom-2 right-2 bg-slate-900/80 hover:bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-white/20 backdrop-blur-md cursor-pointer flex items-center space-x-1 shadow-md">
+                    <i data-lucide="upload" class="w-3 h-3"></i>
+                    <span>Upload Real Photo</span>
+                  </label>
+                  <input type="file" id="house-file-upload" accept="image/*" class="hidden" onchange="handleDwellingPhotoUpload(event)">
+                </div>
+
+                <div class="sm:col-span-7 space-y-2 text-xs">
+                  <div class="flex items-center justify-between pb-1 border-b border-white/10">
+                    <span class="text-slate-400">AI Vision Confidence:</span>
+                    <span id="vision-confidence-tag" class="font-mono text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/30">97.8% Match</span>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-2 text-[11px]">
+                    <div class="p-2 bg-white/5 rounded-lg border border-white/5">
+                      <span class="text-slate-400 block text-[10px]">Detected Wall</span>
+                      <strong id="vision-wall-tag" class="text-amber-300">Burnt Brick / Concrete</strong>
+                    </div>
+                    <div class="p-2 bg-white/5 rounded-lg border border-white/5">
+                      <span class="text-slate-400 block text-[10px]">Detected Roof</span>
+                      <strong id="vision-roof-tag" class="text-amber-300">Reinforced Concrete (RCC)</strong>
+                    </div>
+                    <div class="p-2 bg-white/5 rounded-lg border border-white/5">
+                      <span class="text-slate-400 block text-[10px]">Classification</span>
+                      <strong id="vision-class-tag" class="text-emerald-400">Pucca Permanent Structure</strong>
+                    </div>
+                    <div class="p-2 bg-white/5 rounded-lg border border-white/5">
+                      <span class="text-slate-400 block text-[10px]">Amenities</span>
+                      <strong id="vision-amenity-tag" class="text-sky-300">Overhead Tank, Grid Meter</strong>
+                    </div>
+                  </div>
+
+                  <button type="button" onclick="runVisionDetection()" id="btn-trigger-vision" class="w-full py-2 bg-gradient-to-r from-brand-saffron to-amber-500 hover:from-orange-600 hover:to-amber-600 font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-1.5 transition">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>Re-Analyze Dwelling Exterior with AI</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Predominant Wall Material</span>
+                  <span class="text-[10px] text-emerald-600 font-bold"><i data-lucide="check" class="w-3 h-3 inline"></i> Auto Detected</span>
+                </label>
+                <select id="w_wall_mat" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron focus:outline-none bg-emerald-50/40">
+                  <option value="Burnt Brick / Concrete" selected>Burnt Brick / Concrete (Pucca)</option>
+                  <option value="Stone packed with Mortar">Stone packed with Mortar</option>
+                  <option value="Unburnt Bricks / Mud">Unburnt Bricks / Mud (Kutcha)</option>
+                  <option value="Wood / Bamboo / Thatch">Wood / Bamboo / Thatch</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Predominant Roof Material</span>
+                  <span class="text-[10px] text-emerald-600 font-bold"><i data-lucide="check" class="w-3 h-3 inline"></i> Auto Detected</span>
+                </label>
+                <select id="w_roof_mat" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron focus:outline-none bg-emerald-50/40">
+                  <option value="Concrete (RCC)" selected>Reinforced Concrete (RCC)</option>
+                  <option value="Tiles (Clay/Machine made)">Tiles (Clay / Machine made)</option>
+                  <option value="Galvanized Iron / Metal Sheets">Galvanized Iron / Metal Sheets</option>
+                  <option value="Thatch / Grass / Plastic Sheets">Thatch / Grass / Plastic Sheets</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Physical Condition</label>
+                <select id="w_house_cond" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+                  <option value="Good" selected>Good (Structurally Sound)</option>
+                  <option value="Livable">Livable</option>
+                  <option value="Dilapidated">Dilapidated</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Exclusive Dwelling Rooms</label>
+                <input type="number" id="w_rooms" min="1" max="15" value="3" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+              </div>
+            </div>
+          </div>
+
+          <div id="form-step-3" class="wizard-step hidden space-y-5">
+            <div class="border-b pb-3">
+              <h3 class="text-lg font-bold text-slate-800">Step 3: Household Amenities & Clean Energy Assets</h3>
+              <p class="text-xs text-slate-500">Track critical infrastructure indicators (drinking water, energy, and sanitation).</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Primary Drinking Water Source</label>
+                <select id="w_water_src" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+                  <option value="Treated Piped Tap Water">Treated Piped Tap Water (Municipal / Tap)</option>
+                  <option value="Covered Borewell/Tubewell">Covered Borewell / Tubewell</option>
+                  <option value="Handpump">Handpump</option>
+                  <option value="Open Well / Spring">Open Well / Spring</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Primary Fuel for Cooking</label>
+                <select id="w_fuel" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+                  <option value="LPG / Piped PNG">LPG / Piped PNG (Clean Energy)</option>
+                  <option value="Electricity / Induction">Electricity / Induction</option>
+                  <option value="Biogas">Biogas</option>
+                  <option value="Firewood / Charcoal">Firewood / Charcoal</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Latrine Facility on Premises</label>
+                <select id="w_latrine" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+                  <option value="Flush latrine connected to Sewer/Septic">Flush latrine (Sewer / Septic Tank)</option>
+                  <option value="Twin pit latrine with slab">Twin pit latrine with slab</option>
+                  <option value="No latrine within premises">No latrine within premises</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Broadband / Internet Access</label>
+                <select id="w_internet" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+                  <option value="Home Fiber + Mobile 5G/4G">Yes: Fiber Broadband & Mobile Data</option>
+                  <option value="Mobile Internet Only">Mobile Internet (4G/5G) Only</option>
+                  <option value="No Internet Access">No Internet Access</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="form-step-4" class="wizard-step hidden space-y-5">
+            <div class="border-b pb-3">
+              <h3 class="text-lg font-bold text-slate-800">Step 4: Demographic Profile & Token Verification</h3>
+              <p class="text-xs text-slate-500">Cross-validate parameters and generate your DPDP-compliant DCAT-2027 token.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Mother Tongue</label>
+                <input type="text" id="w_mothertongue" value="Marathi" placeholder="e.g. Hindi, Bengali, Tamil" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Highest Educational Level</label>
+                <select id="w_education" class="w-full text-sm border border-slate-300 rounded-lg p-2.5 focus:ring-2 focus:ring-brand-saffron">
+                  <option value="Graduate / Post-Graduate">Graduate / Post-Graduate</option>
+                  <option value="Higher Secondary (12th)">Higher Secondary (12th)</option>
+                  <option value="Secondary (10th)">Secondary (10th)</option>
+                  <option value="Primary (5th)">Primary (5th)</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="ai-validation-box" class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start space-x-3">
+              <i data-lucide="shield-check" class="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+              <div>
+                <div class="font-bold text-sm text-emerald-900">AI Cross-Validation: 100% Consistent</div>
+                <div class="mt-0.5 text-emerald-700">All housing structural materials and resident indicators are congruent. Ready for cryptographic token generation.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-4 border-t border-slate-200">
+            <button type="button" id="prevBtn" onclick="nextPrev(-1)" class="hidden px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition">
+              <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i> Previous Step
+            </button>
+            <div class="ml-auto flex items-center space-x-3">
+              <button type="button" id="nextBtn" onclick="nextPrev(1)" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-brand-saffron to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-sm shadow-md transition transform active:scale-95">
+                <span>Continue</span> <i data-lucide="arrow-right" class="w-4 h-4 inline ml-1"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="lg:col-span-4 space-y-4">
+          <div class="bg-gradient-to-b from-slate-900 to-brand-navy rounded-2xl p-5 text-white shadow-md border border-slate-700">
+            <div class="flex items-center justify-between pb-3 border-b border-white/10">
+              <div class="flex items-center space-x-2">
+                <div class="w-7 h-7 rounded-lg bg-brand-saffron/20 border border-brand-saffron flex items-center justify-center text-brand-saffron">
+                  <i data-lucide="bot" class="w-4 h-4"></i>
+                </div>
+                <span class="font-bold text-sm text-amber-300">JanAI Assistant & Voice</span>
+              </div>
+              <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">Live Copilot</span>
+            </div>
+
+            <div class="py-4 space-y-3">
+              <div id="janai-topic" class="text-xs font-bold text-orange-200">Field Explainer & Helper:</div>
+              <div id="janai-explanation" class="text-xs text-slate-300 leading-relaxed bg-white/5 p-3 rounded-xl border border-white/5">
+                "Click the <span class='text-amber-300 font-semibold'>Explain</span> icon beside any question or use voice queries in your language."
+              </div>
+            </div>
+
+            <div id="janai-audio-player" class="hidden p-2.5 rounded-xl bg-slate-800/90 border border-amber-500/30 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-1 h-5">
+                  <span class="w-1 bg-amber-400 rounded-full waveform-bar" style="animation-delay: 0.1s;"></span>
+                  <span class="w-1 bg-amber-400 rounded-full waveform-bar" style="animation-delay: 0.3s;"></span>
+                  <span class="w-1 bg-amber-400 rounded-full waveform-bar" style="animation-delay: 0.2s;"></span>
+                  <span class="w-1 bg-amber-400 rounded-full waveform-bar" style="animation-delay: 0.4s;"></span>
+                </div>
+                <span class="text-[11px] text-amber-200 font-medium">JanVani Speaking...</span>
+              </div>
+              <button onclick="stopSpokenVoice()" class="text-xs text-slate-400 hover:text-white px-2 py-1 bg-slate-700 rounded">
+                <i data-lucide="square" class="w-3 h-3 inline"></i> Stop
+              </button>
+            </div>
+
+            <div class="pt-2">
+              <div class="relative flex items-center">
+                <input type="text" id="janai-custom-input" placeholder="Ask: 'What is a Pucca house?'..." class="w-full bg-slate-800/90 text-xs text-white rounded-lg pl-3 pr-16 py-2 border border-slate-700 focus:outline-none focus:border-brand-saffron">
+                <div class="absolute right-1 flex items-center space-x-1">
+                  <button onclick="recordVoiceQuery('janai-custom-input')" class="p-1 bg-amber-600 hover:bg-amber-500 rounded-md text-white" title="Voice Input">
+                    <i data-lucide="mic" class="w-3 h-3"></i>
+                  </button>
+                  <button onclick="askJanAICustom()" class="p-1 bg-brand-saffron hover:bg-orange-600 rounded-md text-white">
+                    <i data-lucide="send" class="w-3 h-3"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 text-emerald-900 text-xs space-y-2">
+            <div class="flex items-center space-x-2 font-bold">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-700"></i>
+              <span>Zero-PII Sandboxed Engine</span>
+            </div>
+            <p class="text-slate-600 leading-relaxed text-[11px]">
+              All photos and household inputs are processed ephemerally with DPDP-2023 safeguards. No images or unmasked personal identities are persisted.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div id="dcat-modal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 text-center space-y-5">
+          <div class="w-16 h-16 bg-emerald-100 text-brand-emerald rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+            <i data-lucide="award" class="w-8 h-8"></i>
+          </div>
+
+          <div>
+            <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">Self-Enumeration Complete</span>
+            <h3 class="text-2xl font-black text-slate-900 mt-2">DCAT-2027 Token Issued</h3>
+            <p class="text-xs text-slate-500 mt-1">Digital Census Acknowledgment Token (SHA-256 Hash)</p>
+          </div>
+
+          <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl inline-block mx-auto shadow-sm">
+            <div id="qrcode-container" class="flex justify-center"></div>
+            <div id="dcat-token-hash" class="mt-3 font-mono text-[11px] text-slate-600 bg-white px-3 py-1 rounded-md border border-slate-200">
+              DCAT-2027-IN-411001-9874
+            </div>
+          </div>
+
+          <p class="text-xs text-slate-600 leading-relaxed text-left bg-orange-50 p-3 rounded-xl border border-orange-200">
+            <strong class="text-orange-900">Next Step:</strong> Show this QR code to your visiting Census Enumerator for instant verification in under 15 seconds.
+          </p>
+
+          <div class="flex gap-2">
+            <button onclick="downloadTokenCard()" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Save Token Card</span>
+            </button>
+            <button onclick="closeDCATModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold">
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-satyavani" class="tab-content hidden space-y-6">
+      <div class="bg-gradient-to-r from-slate-900 via-brand-navy to-brand-indigo rounded-2xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden border border-slate-800">
+        <div class="max-w-2xl space-y-3 relative z-10">
+          <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold">
+            <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+            <span>Google Search Grounded Fact-Checking Engine</span>
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-black tracking-tight">SatyaVani AI • Anti-Misinformation Desk</h2>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            Verify viral claims and social media rumors in real-time. SatyaVani checks verified gazettes and produces shareable debunk cards.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <label class="block text-sm font-bold text-slate-800 flex items-center justify-between">
+            <span>Paste Claim or Rumor to Verify:</span>
+            <button onclick="recordVoiceQuery('satyavani-input')" class="text-xs text-amber-600 hover:text-amber-700 font-bold flex items-center">
+              <i data-lucide="mic" class="w-3.5 h-3.5 mr-1"></i> Speak Claim
+            </button>
+          </label>
+          <div class="relative">
+            <textarea id="satyavani-input" rows="4" placeholder="e.g. 'Is it true that Census 2027 enumerators will demand property deeds and bank OTPs?'" class="w-full text-sm border border-slate-300 rounded-xl p-3.5 focus:ring-2 focus:ring-brand-saffron focus:outline-none custom-scrollbar"></textarea>
+            
+            <div class="flex flex-wrap gap-2 mt-3">
+              <button onclick="checkGroundedRumor()" id="btn-verify-rumor" class="px-6 py-2.5 bg-gradient-to-r from-brand-emerald to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold text-sm rounded-xl shadow-md flex items-center justify-center space-x-2 transition transform active:scale-95">
+                <i data-lucide="search" class="w-4 h-4"></i>
+                <span>Grounded Fact Check</span>
+              </button>
+              <button onclick="listenSatyaDebunkAudio()" id="btn-listen-debunk" class="hidden px-4 py-2.5 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold text-sm rounded-xl flex items-center space-x-1.5 transition">
+                <i data-lucide="volume-2" class="w-4 h-4 text-amber-600"></i>
+                <span>Listen Audio Summary</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="satya-result-container" class="hidden pt-4 border-t border-slate-200 space-y-4">
+            <div id="satya-badge-bar" class="flex items-center justify-between p-3.5 rounded-xl bg-rose-50 border border-rose-200">
+              <div class="flex items-center space-x-2.5">
+                <span id="satya-status-icon" class="w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-black">✕</span>
+                <div>
+                  <span id="satya-status-label" class="text-xs font-black uppercase text-rose-700">VERDICT: FALSE & FRAUDULENT</span>
+                  <div class="text-[11px] text-rose-800 font-medium">Violates Statutory Confidentiality Guidelines</div>
+                </div>
+              </div>
+              <span id="satya-confidence" class="text-xs font-bold bg-white px-2.5 py-1 rounded-md text-slate-700 border border-slate-200">99.2% Grounded Proof</span>
+            </div>
+
+            <div class="space-y-2">
+              <h4 class="text-xs font-bold uppercase text-slate-500 tracking-wider">Official Clarification:</h4>
+              <p id="satya-explanation" class="text-sm text-slate-800 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-200">
+                Census enumeration strictly prohibits requesting property registry titles, bank OTPs, biometric iris scans, or financial account details.
+              </p>
+            </div>
+
+            <div class="space-y-2">
+              <h4 class="text-xs font-bold uppercase text-slate-500 tracking-wider flex items-center">
+                <i data-lucide="link" class="w-3.5 h-3.5 mr-1 text-sky-600"></i> Grounded Evidence & Official Sources:
+              </h4>
+              <div id="satya-sources-list" class="space-y-1.5 text-xs text-slate-600">
+                <div class="p-2.5 bg-sky-50/60 rounded-lg border border-sky-100 flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-sky-600"></i>
+                    <span class="font-medium text-slate-800">Section 15, Census Act 1948 (Statutory Confidentiality)</span>
+                  </div>
+                  <span class="text-[10px] text-sky-700 font-bold">Official Law</span>
+                </div>
+                <div class="p-2.5 bg-sky-50/60 rounded-lg border border-sky-100 flex items-center justify-between">
+                  <div class="flex items-center space-x-2">
+                    <i data-lucide="shield" class="w-3.5 h-3.5 text-sky-600"></i>
+                    <span class="font-medium text-slate-800">PIB Fact Check Advisory Ref #FC-2026/092</span>
+                  </div>
+                  <span class="text-[10px] text-sky-700 font-bold">PIB Verified</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <div class="text-xs font-bold text-emerald-900">Prevent Misinformation in WhatsApp Groups!</div>
+                <div class="text-[11px] text-emerald-700">Copy pre-formatted verified clarification in English or Hindi.</div>
+              </div>
+              <button onclick="copyDebunkCard()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-lg flex items-center space-x-1.5 flex-shrink-0">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span id="copy-btn-text">Copy WhatsApp Card</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500 mr-1.5"></i>
+              Trending Fact Checks
+            </h3>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-semibold">Live Feed</span>
+          </div>
+
+          <div class="space-y-3 text-xs">
+            <div onclick="selectPresetRumor(1)" class="p-3 bg-slate-50 hover:bg-orange-50 border border-slate-200 rounded-xl cursor-pointer transition">
+              <div class="font-bold text-slate-800">"Census enumerators will demand bank OTPs and property deeds."</div>
+              <div class="text-rose-600 font-semibold mt-1 flex items-center"><i data-lucide="x-circle" class="w-3 h-3 inline mr-1"></i> FALSE • Completely fraudulent.</div>
+            </div>
+
+            <div onclick="selectPresetRumor(2)" class="p-3 bg-slate-50 hover:bg-orange-50 border border-slate-200 rounded-xl cursor-pointer transition">
+              <div class="font-bold text-slate-800">"Self-Enumeration mobile app mandates biometric fingerprint scanning."</div>
+              <div class="text-rose-600 font-semibold mt-1 flex items-center"><i data-lucide="x-circle" class="w-3 h-3 inline mr-1"></i> FALSE • OTP login only, zero biometrics.</div>
+            </div>
+
+            <div onclick="selectPresetRumor(3)" class="p-3 bg-slate-50 hover:bg-orange-50 border border-slate-200 rounded-xl cursor-pointer transition">
+              <div class="font-bold text-slate-800">"Tenants must upload landlord lease agreements during Phase-1."</div>
+              <div class="text-rose-600 font-semibold mt-1 flex items-center"><i data-lucide="x-circle" class="w-3 h-3 inline mr-1"></i> FALSE • Verbal declaration is standard.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-enumerator" class="tab-content hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 text-sky-800">Field Module</span>
+            <h2 class="text-2xl font-extrabold text-slate-900">Enumerator Offline Co-Pilot</h2>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">Route supervisor simulator: QR verification, voice entry, and objection resolution scripts.</p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Local Sync Queue: 4 Cached</span>
+          </div>
+          <button onclick="simulateSync()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg shadow-sm flex items-center space-x-1.5">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Sync Cloud DB</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="font-bold text-slate-800 text-sm">Assigned Block #EB-411001-084 (Sector 4)</h3>
+            <span class="text-xs text-slate-500 font-medium">120 Total Units</span>
+          </div>
+
+          <div class="space-y-3">
+            <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 flex items-center justify-between">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-xs text-slate-800">House #101: Deshmukh Niwas</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">QR Verified (DCAT)</span>
+                </div>
+                <div class="text-[11px] text-slate-500">Self-enumerated online • 4 Residents • Clean sync</div>
+              </div>
+              <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600"></i>
+            </div>
+
+            <div class="p-4 rounded-xl border border-slate-200 bg-white hover:border-slate-300 flex items-center justify-between">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-xs text-slate-800">House #102: Flat 302, Green Heights</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Pending Visit</span>
+                </div>
+                <div class="text-[11px] text-slate-500">Door-to-door visit required • Schedule pending</div>
+              </div>
+              <button onclick="startVoiceInputForWizard()" class="px-3 py-1.5 bg-brand-saffron text-white text-xs font-bold rounded-lg hover:bg-orange-600 flex items-center space-x-1">
+                <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                <span>Voice Form</span>
+              </button>
+            </div>
+
+            <div class="p-4 rounded-xl border border-rose-200 bg-rose-50/40 flex items-center justify-between">
+              <div class="space-y-1">
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-xs text-slate-800">House #103: Agarwal Bungalow</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">Reluctant Household</span>
+                </div>
+                <div class="text-[11px] text-slate-500">Citizen expressed privacy concerns regarding question set</div>
+              </div>
+              <button onclick="openConflictAssistant()" class="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700 flex items-center space-x-1">
+                <i data-lucide="life-buoy" class="w-3.5 h-3.5"></i>
+                <span>AI Script</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b pb-3">
+            <h3 class="font-bold text-slate-800 text-sm flex items-center">
+              <i data-lucide="sparkles" class="w-4 h-4 text-brand-saffron mr-1.5"></i>
+              Enumerator Objection Handling AI
+            </h3>
+            <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-bold text-slate-600">Field Script</span>
+          </div>
+
+          <div class="space-y-3">
+            <label class="block text-xs font-semibold text-slate-700">Select Common Field Scenario:</label>
+            <select id="conflict-scenario-select" onchange="updateConflictScript(this.value)" class="w-full text-xs border border-slate-300 rounded-lg p-2.5 bg-slate-50 font-medium">
+              <option value="privacy">Citizen says: "Why are you noting my home assets?"</option>
+              <option value="absent">Household is locked/away during daytime visits.</option>
+              <option value="documents">Citizen demands to show paper documentation.</option>
+              <option value="language">Non-native speaker from another state.</option>
+            </select>
+
+            <div class="p-4 bg-slate-900 text-white rounded-xl text-xs space-y-2">
+              <div class="text-amber-300 font-bold flex items-center space-x-1">
+                <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                <span>Polite Spoken Field Script:</span>
+              </div>
+              <p id="conflict-script-body" class="text-slate-200 leading-relaxed text-[11px]">
+                "Namaste Ji. The Census Act 1948 strictly prohibits sharing your personal asset data with tax or police authorities. It is solely aggregated to calculate your neighborhood's infrastructure budget."
+              </p>
+            </div>
+
+            <button onclick="speakConflictScript()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold text-xs rounded-xl flex items-center justify-center space-x-2">
+              <i data-lucide="volume-2" class="w-4 h-4 text-brand-saffron"></i>
+              <span>Listen to Regional Pronunciation</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-schedule" class="tab-content hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+        <div>
+          <h2 class="text-2xl font-extrabold text-slate-900">2027 Phased Roadmap & Pincode Geo-Schedule</h2>
+          <p class="text-xs sm:text-sm text-slate-500">Know precisely when enumerators will visit your district and block.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="p-5 rounded-2xl bg-orange-50/70 border border-orange-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-1 bg-brand-saffron text-white rounded-lg text-xs font-bold">Phase 1</span>
+              <span class="text-xs font-semibold text-orange-900">April – September 2026 / 2027</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Houselisting & Housing Census</h3>
+            <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+              <li>Listing of all residential and commercial structures.</li>
+              <li>Multimodal exterior scan & clean energy recording.</li>
+              <li>Citizen Self-Enumeration window open for 30 days.</li>
+            </ul>
+          </div>
+
+          <div class="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="px-2.5 py-1 bg-brand-emerald text-white rounded-lg text-xs font-bold">Phase 2</span>
+              <span class="text-xs font-semibold text-emerald-900">February 2027</span>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900">Population Enumeration</h3>
+            <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+              <li>Individual socio-demographic, age, literacy, and occupation.</li>
+              <li>Mother tongue and language profile.</li>
+              <li>Revision round conducted during the last 5 days.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4">
+          <h3 class="text-sm font-bold text-slate-800">Check Your Local Ward / Pincode Schedule</h3>
+          
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input type="text" id="pincode-search-input" placeholder="Enter 6-digit Pincode (e.g. 411001, 110001, 600001)" maxlength="6" value="411001" class="flex-1 border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-brand-saffron focus:outline-none font-mono">
+            <button onclick="lookupPincodeSchedule()" class="px-6 py-3 bg-brand-saffron hover:bg-orange-600 text-white font-bold text-sm rounded-xl shadow-sm flex items-center justify-center space-x-2">
+              <i data-lucide="search" class="w-4 h-4"></i>
+              <span>Find Schedule</span>
+            </button>
+          </div>
+
+          <div id="pincode-result" class="bg-white p-5 rounded-xl border border-slate-200 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-base font-bold text-slate-900">Pincode: 411001 (Pune Urban, Maharashtra)</span>
+                <p class="text-xs text-slate-500">Zone 4 • Nodal Office: Pune Municipal Corporation</p>
+              </div>
+              <span class="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full">Phase-1 Active</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+              <div class="p-3 bg-slate-50 rounded-lg">
+                <span class="text-slate-400 block text-[10px]">Self-Enumeration Window</span>
+                <span class="font-bold text-slate-700">May 01 - May 21, 2026</span>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-lg">
+                <span class="text-slate-400 block text-[10px]">Door-to-Door Enumeration</span>
+                <span class="font-bold text-slate-700">May 22 - June 15, 2026</span>
+              </div>
+              <div class="p-3 bg-slate-50 rounded-lg">
+                <span class="text-slate-400 block text-[10px]">Toll-Free Helpline</span>
+                <span class="font-bold text-slate-700">1800-2027-DEMO</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-insights" class="tab-content hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-extrabold text-slate-900">Demographic Insights & 2011-2027 Evolution</h2>
+            <p class="text-xs sm:text-sm text-slate-500">Explore shifts in national household amenities, clean energy, and digital access.</p>
+          </div>
+          
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-semibold text-slate-500">Metric:</span>
+            <select id="chart-metric-select" onchange="updateCharts(this.value)" class="text-xs border border-slate-300 rounded-lg p-2 bg-slate-50 font-bold text-slate-700 focus:outline-none">
+              <option value="amenities">Clean Fuel & Electricity Growth</option>
+              <option value="digital">Mobile & Broadband Penetration</option>
+              <option value="urban">Rural vs Urban Housing Transition</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200">
+            <h4 class="text-xs font-bold uppercase text-slate-600 mb-4 flex items-center">
+              <i data-lucide="trending-up" class="w-4 h-4 text-brand-saffron mr-1.5"></i>
+              Household Amenities Evolution (2011 vs 2027 Projected)
+            </h4>
+            <div class="relative h-64">
+              <canvas id="amenitiesBarChart"></canvas>
+            </div>
+          </div>
+
+          <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200">
+            <h4 class="text-xs font-bold uppercase text-slate-600 mb-4 flex items-center">
+              <i data-lucide="pie-chart" class="w-4 h-4 text-brand-emerald mr-1.5"></i>
+              House Structure Distribution (Pucca / Semi-Pucca / Kutcha)
+            </h4>
+            <div class="relative h-64 flex justify-center">
+              <canvas id="housingDoughnutChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 bg-gradient-to-br from-brand-navy to-slate-900 rounded-2xl text-white space-y-4 border border-slate-700">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="sparkles" class="w-5 h-5 text-amber-300"></i>
+            <h3 class="text-base font-bold">Ask Demographics AI Explorer</h3>
+          </div>
+          <p class="text-xs text-slate-300">Ask natural language questions regarding national urbanization rates, literacy jumps, or clean fuel coverage.</p>
+
+          <div class="flex gap-2">
+            <input type="text" id="demo-ai-input" placeholder="e.g., 'What was the change in LPG adoption between 2011 and 2027?'" class="flex-1 bg-white/10 text-xs sm:text-sm text-white rounded-xl px-4 py-2.5 border border-white/20 focus:outline-none focus:border-brand-saffron placeholder-slate-400">
+            <button onclick="askDemographicsAI()" class="px-5 py-2.5 bg-brand-saffron hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md flex items-center space-x-1.5">
+              <span>Query AI</span>
+            </button>
+          </div>
+
+          <div id="demo-ai-response-box" class="hidden p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-200 leading-relaxed"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="serverless-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between border-b pb-3">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center">
+            <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-900">Serverless Backend Architecture (/api/gemini)</h3>
+            <p class="text-xs text-slate-500">Zero Exposed Frontend Keys • Vercel Edge Execution</p>
+          </div>
+        </div>
+        <button onclick="closeServerlessModal()" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 text-xs text-slate-600 leading-relaxed">
+        <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-900 space-y-1">
+          <div class="font-bold flex items-center space-x-1">
+            <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+            <span>Production Architecture:</span>
+          </div>
+          <p class="text-[11px] text-emerald-800">
+            Frontend code dispatches requests strictly to <code>/api/gemini</code>. All API tokens reside in <code>process.env.GEMINI_API_KEY</code> on the server.
+          </p>
+        </div>
+      </div>
+
+      <button onclick="closeServerlessModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold">
+        Close Architecture Inspector
+      </button>
+    </div>
+  </div>
+
+  <div id="voice-center-modal" class="fixed inset-0 bg-slate-900/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl border border-slate-200">
+      <div class="w-16 h-16 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto shadow-inner animate-pulse">
+        <i data-lucide="mic" class="w-8 h-8"></i>
+      </div>
+      
+      <div>
+        <h3 class="text-xl font-black text-slate-900">JanVani Voice Accessibility</h3>
+        <p class="text-xs text-slate-500 mt-1">Speak in your language for low-literacy guidance.</p>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="startContinuousSpeech('en-IN')" class="flex-1 py-2.5 bg-brand-saffron hover:bg-orange-600 text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1">
+          <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+          <span>Speak English</span>
+        </button>
+        <button onclick="startContinuousSpeech('hi-IN')" class="flex-1 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl flex items-center justify-center space-x-1">
+          <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+          <span>बोलें (Hindi)</span>
+        </button>
+      </div>
+
+      <button onclick="closeVoiceCenterModal()" class="w-full py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-xl text-xs font-bold">
+        Close
+      </button>
+    </div>
+  </div>
+
+  <footer class="bg-white border-t border-slate-200 mt-12 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center space-x-2">
+        <div class="w-6 h-6 rounded bg-brand-saffron flex items-center justify-center text-white text-xs font-bold">J</div>
+        <span class="text-xs font-bold text-slate-800">JanGanana 2027 Platform</span>
+        <span class="text-xs text-slate-400">• Multimodal AI, Voice Accessibility & Search Grounding</span>
+      </div>
+      <div class="text-[11px] text-slate-500 text-center sm:text-right">
+        Empowering 140 Crore Citizens • DPDP-2023 Sandboxed Architecture
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
