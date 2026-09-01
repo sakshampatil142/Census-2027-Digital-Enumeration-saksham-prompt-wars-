@@ -73,7 +73,7 @@ export default async function handler(req, res) {
       payload.tools = [{ google_search: {} }];
     }
 
-    const model = 'gemini-2.5-flash';
+    const model = 'gemini-1.5-flash';
     const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
     const upstreamResponse = await fetch(geminiEndpoint, {
