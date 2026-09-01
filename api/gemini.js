@@ -24,13 +24,121 @@ export default async function handler(req, res) {
     });
   }
 
+  const model = 'gemini-1.5-flash';
+  const geminiBaseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
   try {
-    const { prompt, systemInstruction, image, isGrounded } = req.body || {};
+    const { mode, prompt, systemInstruction, image, isGrounded } = req.body || {};
 
     if (!prompt || typeof prompt !== 'string') {
       return res.status(400).json({ error: 'Invalid payload: "prompt" string is required.' });
     }
 
+    // ========================================================
+    // TWO-STEP FACT CHECK MODE (Grounding -> Structured JSON)
+    // ========================================================
+    if (mode === 'factCheck') {
+      // STEP 1: Search-Grounded Plaintext Research Call
+      const step1Payload = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: `You are an expert fact-checker for India's Census 2027 operations.
+Research and evaluate whether the following claim is true, false, or misleading based on official rules, Census Acts, and government notices.
+Claim: "${prompt}"
+
+Provide a detailed factual explanation in plain text, citing official sources, acts, or directives.`
+              }
+            ]
+          }
+        ],
+        tools: [{ google_search: {} }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 1024
+        }
+      };
+
+      const step1Response = await fetch(geminiBaseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(step1Payload)
+      });
+
+      if (!step1Response.ok) {
+        const errData = await step1Response.json();
+        console.error('Step 1 Grounding Error:', errData);
+        return res.status(step1Response.status).json({
+          error: errData.error?.message || 'Grounding step failed'
+        });
+      }
+
+      const step1Data = await step1Response.json();
+      const rawGroundedText = step1Data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '';
+
+      // STEP 2: Strict JSON Schema Extraction (No Grounding Tool)
+      const step2Payload = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: `Convert the following fact-checking research analysis into a structured JSON response for the claim: "${prompt}".
+
+Research Analysis:
+"""
+${rawGroundedText}
+"""
+
+You must output a JSON object adhering to this schema:
+{
+  "verdict": "VERIFIED" | "FALSE" | "MISLEADING",
+  "confidence": "98.5%",
+  "sublabel": "Short category description (e.g. Official Gazette Regulation, Operational Roadmap, Statutory Confidentiality Rule)",
+  "explanation": "2-3 precise sentences explaining the fact-check verdict clearly.",
+  "sources": [
+    { "title": "Name of Law, Gazette Notice or Authority", "tag": "e.g. Official Law / Gazette / Notice" }
+  ]
+}`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 1024,
+          responseMimeType: 'application/json'
+        }
+      };
+
+      const step2Response = await fetch(geminiBaseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(step2Payload)
+      });
+
+      if (!step2Response.ok) {
+        const errData = await step2Response.json();
+        console.error('Step 2 Structuring Error:', errData);
+        return res.status(step2Response.status).json({
+          error: errData.error?.message || 'JSON formatting step failed'
+        });
+      }
+
+      const step2Data = await step2Response.json();
+      const structuredJsonText = step2Data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') || '{}';
+
+      return res.status(200).json({
+        text: structuredJsonText,
+        status: 'success'
+      });
+    }
+
+    // ========================================================
+    // STANDARD GENERATION MODE (Single Call)
+    // ========================================================
     const userParts = [];
 
     if (image && typeof image === 'string') {
@@ -73,10 +181,7 @@ export default async function handler(req, res) {
       payload.tools = [{ google_search: {} }];
     }
 
-    const model = 'gemini-1.5-flash';
-    const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-    const upstreamResponse = await fetch(geminiEndpoint, {
+    const upstreamResponse = await fetch(geminiBaseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -93,11 +198,9 @@ export default async function handler(req, res) {
     const data = await upstreamResponse.json();
     const candidate = data.candidates?.[0];
     const replyText = candidate?.content?.parts?.map(p => p.text || '').join('') || '';
-    const groundingMetadata = candidate?.groundingMetadata || null;
 
     return res.status(200).json({
       text: replyText,
-      groundingMetadata: groundingMetadata,
       status: 'success'
     });
   } catch (error) {
@@ -105,4 +208,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Internal server error while processing request.' });
   }
 }
-
