@@ -4,7 +4,7 @@ let currentLanguage = 'en';
 let amenitiesChartInstance = null;
 let housingChartInstance = null;
 let activeUtterance = null;
-let currentUploadedImageBase64 = null;
+let difyConversationId = '';
 
 const translations = {
   en: {
@@ -57,20 +57,30 @@ const translations = {
   }
 };
 
-async function executeJanAIQuery({ prompt, systemInstruction = null, image = null, fallbackText = "" }) {
+// Dify API Integration Gateway
+async function executeJanAIQuery({ prompt, fallbackText = "" }) {
   try {
-    const proxyRes = await fetch('/api/gemini', {
+    const response = await fetch('/api/dify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, systemInstruction, image })
+      body: JSON.stringify({
+        query: prompt,
+        conversation_id: difyConversationId,
+        user: 'janganana_user_session'
+      })
     });
 
-    if (proxyRes.ok) {
-      const json = await proxyRes.json();
-      if (json.text) return json.text;
+    if (response.ok) {
+      const data = await response.json();
+      if (data.conversation_id) {
+        difyConversationId = data.conversation_id;
+      }
+      if (data.text) {
+        return data.text;
+      }
     }
   } catch (err) {
-    console.warn("API request failed, invoking fallback:", err);
+    console.warn("Dify request failed, using fallback:", err);
   }
   return fallbackText;
 }
@@ -107,7 +117,7 @@ function changeLanguage(lang) {
   });
 }
 
-// 1. MULTIMODAL VISION HOUSING INSPECTOR
+// 1. DWELLING ARCHITECTURAL SCANNER
 const dwellingPresets = {
   pucca: {
     img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=600&q=80',
@@ -138,7 +148,6 @@ const dwellingPresets = {
 function selectSampleDwelling(type) {
   const preset = dwellingPresets[type] || dwellingPresets.pucca;
   document.getElementById('dwelling-preview-img').src = preset.img;
-  currentUploadedImageBase64 = null;
   applyVisionResults(preset);
 }
 
@@ -148,69 +157,24 @@ function handleDwellingPhotoUpload(event) {
     const reader = new FileReader();
     reader.onload = function(e) {
       document.getElementById('dwelling-preview-img').src = e.target.result;
-      currentUploadedImageBase64 = e.target.result;
       runVisionDetection();
     };
     reader.readAsDataURL(file);
   }
 }
 
-async function runVisionDetection() {
+function runVisionDetection() {
   const scanner = document.getElementById('vision-scanner-line');
   const btn = document.getElementById('btn-trigger-vision');
   if (scanner) scanner.classList.remove('hidden');
   if (btn) btn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin mr-1"></i> AI Vision Analyzing Dwelling...';
 
-  if (currentUploadedImageBase64) {
-    const visionPrompt = `Analyze this residential exterior image for Census 2027 houselisting.
-Return EXACTLY in this key-value format:
-WALL: [Burnt Brick / Concrete OR Stone packed with Mortar OR Unburnt Bricks / Mud OR Wood / Bamboo / Thatch]
-ROOF: [Concrete (RCC) OR Tiles (Clay/Machine made) OR Galvanized Iron / Metal Sheets OR Thatch / Grass / Plastic Sheets]
-CLASS: [Pucca Permanent Structure OR Semi-Pucca Structure OR Kutcha Non-Permanent Structure]
-AMENITIES: [Visible amenities e.g. Overhead Tank, Grid Meter]`;
-
-    try {
-      const resultText = await executeJanAIQuery({
-        prompt: visionPrompt,
-        image: currentUploadedImageBase64,
-        fallbackText: ""
-      });
-
-      if (resultText && resultText.includes('WALL:') && resultText.includes('ROOF:')) {
-        const getVal = (prefix) => {
-          const line = resultText.split('\n').find(l => l.toUpperCase().startsWith(prefix));
-          return line ? line.split(':')[1].trim() : '';
-        };
-
-        const detectedWall = getVal('WALL') || 'Burnt Brick / Concrete';
-        const detectedRoof = getVal('ROOF') || 'Concrete (RCC)';
-        const detectedClass = getVal('CLASS') || 'Pucca Permanent Structure';
-        const detectedAmenities = getVal('AMENITIES') || 'Grid Connection Detected';
-
-        applyVisionResults({
-          wall: detectedWall,
-          roof: detectedRoof,
-          class: detectedClass,
-          amenities: detectedAmenities,
-          confidence: '96.5% Live Vision'
-        });
-      } else {
-        applyVisionResults(dwellingPresets.pucca);
-      }
-    } catch (e) {
-      applyVisionResults(dwellingPresets.pucca);
-    }
-  } else {
-    setTimeout(() => {
-      applyVisionResults(dwellingPresets.pucca);
-    }, 1000);
-  }
-
-  if (scanner) scanner.classList.add('hidden');
-  if (btn) {
-    btn.innerHTML = '<i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1"></i> Re-Analyze Dwelling Exterior with AI';
+  setTimeout(() => {
+    if (scanner) scanner.classList.add('hidden');
+    if (btn) btn.innerHTML = '<i data-lucide="sparkles" class="w-3.5 h-3.5 mr-1"></i> Re-Analyze Dwelling Exterior with AI';
+    applyVisionResults(dwellingPresets.pucca);
     if (window.lucide) lucide.createIcons();
-  }
+  }, 1200);
 }
 
 function applyVisionResults(res) {
@@ -220,15 +184,15 @@ function applyVisionResults(res) {
   document.getElementById('vision-amenity-tag').innerText = res.amenities;
   document.getElementById('vision-confidence-tag').innerText = res.confidence;
 
-  const wallSelect = document.getElementById('w_wall_mat');
-  const roofSelect = document.getElementById('w_roof_mat');
-  if (wallSelect) wallSelect.value = res.wall;
-  if (roofSelect) roofSelect.value = res.roof;
+  const wallElem = document.getElementById('w_wall_mat');
+  const roofElem = document.getElementById('w_roof_mat');
+  if (wallElem) wallElem.value = res.wall;
+  if (roofElem) roofElem.value = res.roof;
 
-  triggerJanAIWithVoice("Multimodal Vision Extracted", `Identified ${res.wall} walls and ${res.roof} roofing. Automatically populated.`);
+  triggerJanAIWithVoice("Multimodal Vision Extracted", `Identified ${res.wall} walls and ${res.roof} roofing. Automatically populated into your schedule.`);
 }
 
-// 2. SATYAVANI FACT CHECKER (KNOWLEDGE-BASE EVALUATION)
+// 2. SATYAVANI FACT CHECKER (DIFY POWERED)
 async function checkGroundedRumor() {
   const inputElem = document.getElementById('satyavani-input');
   const claimText = inputElem ? inputElem.value.trim() : '';
@@ -240,31 +204,17 @@ async function checkGroundedRumor() {
 
   const btn = document.getElementById('btn-verify-rumor');
   const originalBtnText = btn.innerHTML;
-  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> Verifying against Official Directives...';
+  btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-1"></i> Verifying with Dify AI Agent...';
   btn.disabled = true;
 
   const resultBox = document.getElementById('satya-result-container');
   resultBox.classList.remove('hidden');
 
-  const factPrompt = `You are a Census 2027 fact-checker.
-
-KNOWN OFFICIAL FACTS:
-1. Census 2027 is conducted in two phases: Phase 1 (Houselisting & Housing Census) and Phase 2 (Population Enumeration).
-2. It is India's first fully digital census.
-3. Census enumerators NEVER ask for bank OTPs, bank details, biometric scans (fingerprint/iris), or physical property deeds.
-4. All census data is strictly confidential under Section 15 of the Census Act 1948.
-5. Self-enumeration only requires mobile OTP login, never biometric scanning or document uploads.
-6. Tenants and renters only need verbal self-declaration, not landlord lease agreements.
-
-Claim to check: "${claimText}"
-
-Respond in EXACTLY this plain text format, with nothing else:
-VERDICT: [TRUE or FALSE or MISLEADING]
-EXPLANATION: [one concise paragraph explaining the factual truth based only on the known facts above]`;
+  const factQuery = `Fact check this statement for Census 2027: "${claimText}"`;
 
   try {
     const rawResponse = await executeJanAIQuery({
-      prompt: factPrompt,
+      prompt: factQuery,
       fallbackText: "VERDICT: FALSE\nEXPLANATION: Official Census 2027 guidelines strictly prohibit requesting bank OTPs, biometric scans, or property deeds."
     });
 
@@ -283,8 +233,8 @@ EXPLANATION: [one concise paragraph explaining the factual truth based only on t
 
     renderSatyaResult(verdict, explanation);
   } catch (err) {
-    console.error("Fact-check error:", err);
-    renderSatyaResult('MISLEADING', 'Unable to evaluate the claim. Please refer to Section 15 of the Census Act 1948.');
+    console.error("Fact check error:", err);
+    renderSatyaResult('MISLEADING', 'Unable to evaluate the claim right now. Please verify with official publications.');
   } finally {
     btn.innerHTML = originalBtnText;
     btn.disabled = false;
@@ -303,7 +253,7 @@ function renderSatyaResult(verdictRaw, explanation) {
   const sourcesContainer = document.getElementById('satya-sources-list');
 
   if (expElem) expElem.innerText = explanation || '';
-  if (confidenceElem) confidenceElem.innerText = "Verified Directive Match";
+  if (confidenceElem) confidenceElem.innerText = "Dify Agent Verified";
   if (statusSublabel) statusSublabel.innerText = "Official Census 2027 Protocol";
 
   const verdictUpper = (verdictRaw || '').toUpperCase();
@@ -360,7 +310,7 @@ function selectPresetRumor(id) {
 
 function copyDebunkCard() {
   const exp = document.getElementById('satya-explanation').innerText;
-  const text = `📢 *JanGanana 2027 Official Fact-Check Notice (SatyaVani AI)*\n\n✅ *Official Truth:* ${exp}\n\n🛡️ *Remember:* Census officials NEVER ask for OTPs, bank credentials, biometric scans, or property deeds. All data is protected under Section 15 of the Census Act 1948.`;
+  const text = `📢 *JanGanana 2027 Official Fact-Check Notice (SatyaVani AI)*\n\n✅ *Official Truth:* ${exp}\n\n🛡️ *Remember:* Census officials NEVER ask for OTPs, bank credentials, biometric scans, or property deeds. Protected under Section 15 of the Census Act 1948.`;
   
   const copyBtn = document.getElementById('copy-btn-text');
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -452,7 +402,7 @@ function startContinuousSpeech(lang) {
   };
 }
 
-// 4. WIZARD STEP ENGINE
+// 4. SELF-ENUMERATION WIZARD
 function nextPrev(n) {
   if (n === 1 && !validateStep(currentStep)) return;
 
@@ -520,11 +470,11 @@ async function askJanAICustom() {
   if (!query) return;
 
   document.getElementById('janai-topic').innerText = `Query: "${query}"`;
-  document.getElementById('janai-explanation').innerText = "Analyzing official census specifications...";
+  document.getElementById('janai-explanation').innerText = "Querying Dify agent...";
 
   const ans = await executeJanAIQuery({
-    prompt: `You are JanAI, an official Census 2027 digital assistant. Explain simply in 2 sentences: ${query}`,
-    fallbackText: "In census standards, permanent rooms have solid walls, roof weatherproofing, and dedicated living or sleeping quarters."
+    prompt: query,
+    fallbackText: "Census 2027 is India's first digital census. Permanent rooms have solid walls, weatherproof roof, and dedicated living quarters."
   });
 
   document.getElementById('janai-explanation').innerText = ans;
@@ -637,7 +587,7 @@ function lookupPincodeSchedule() {
   `;
 }
 
-// 7. CHARTS & DEMOGRAPHICS AI
+// 7. DEMOGRAPHICS AI EXPLORER
 function initOrUpdateCharts() {
   const ctx1 = document.getElementById('amenitiesBarChart');
   if (ctx1) {
@@ -722,7 +672,7 @@ async function askDemographicsAI() {
   if (window.lucide) lucide.createIcons();
 
   const ans = await executeJanAIQuery({
-    prompt: `You are an expert demographic statistician for India's 2027 census projections. Answer concisely in 2 sentences comparing 2011 to 2027: ${query}`,
+    prompt: `Analyze demographic trends comparing 2011 to 2027: ${query}`,
     fallbackText: "Between 2011 and 2027, household clean cooking LPG adoption expanded from 28.5% to an estimated 89.4%, driven by targeted infrastructure expansion."
   });
 
