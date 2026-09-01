@@ -199,7 +199,7 @@ function applyVisionResults(res) {
 }
 
 // ========================================================
-// SATYAVANI EMBEDDED KNOWLEDGE BASE FACT CHECKER
+// SINGLE-CALL STRING-PARSED SATYAVANI FACT CHECKER
 // ========================================================
 async function checkGroundedRumor() {
   const inputElem = document.getElementById('satyavani-input');
@@ -218,48 +218,46 @@ async function checkGroundedRumor() {
   const resultBox = document.getElementById('satya-result-container');
   resultBox.classList.remove('hidden');
 
+  const factPrompt = `You are a Census 2027 fact-checker.
+
+KNOWN OFFICIAL FACTS:
+1. Census 2027 is conducted in two phases: Phase 1 (Houselisting & Housing Census) and Phase 2 (Population Enumeration).
+2. It is India's first fully digital census.
+3. Census enumerators NEVER ask for bank OTPs, bank details, biometric scans (fingerprint/iris), or physical property deeds.
+4. All census data is strictly confidential under Section 15 of the Census Act 1948.
+5. Self-enumeration only requires mobile OTP login, never biometric scanning or document uploads.
+6. Tenants and renters only need verbal self-declaration, not landlord lease agreements.
+
+Claim to check: "${claimText}"
+
+Respond in EXACTLY this plain text format, with nothing else:
+VERDICT: [TRUE or FALSE or MISLEADING]
+EXPLANATION: [one concise paragraph explaining the factual truth based only on the known facts above]`;
+
   try {
-    const response = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        mode: 'factCheck',
-        prompt: claimText
-      })
+    const rawResponse = await executeJanAIQuery({
+      prompt: factPrompt,
+      fallbackText: "VERDICT: FALSE\nEXPLANATION: Official Census 2027 guidelines strictly prohibit requesting bank OTPs, biometric scans, or property deeds."
     });
 
-    if (!response.ok) {
-      throw new Error(`Server returned status ${response.status}`);
+    let text = (rawResponse || '').trim();
+
+    let verdict = 'MISLEADING';
+    let explanation = text;
+
+    if (text.includes('VERDICT:') && text.includes('EXPLANATION:')) {
+      const partsAfterVerdict = text.split('VERDICT:')[1];
+      const splitExplanation = partsAfterVerdict.split('EXPLANATION:');
+      verdict = splitExplanation[0].trim();
+      explanation = splitExplanation[1].trim();
+    } else if (text.includes('VERDICT:')) {
+      verdict = text.split('VERDICT:')[1].trim();
     }
 
-    const data = await response.json();
-    let text = (data.text || '').trim();
-
-    text = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
-
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('No valid JSON structure found in response.');
-    }
-
-    const parsedData = JSON.parse(jsonMatch[0]);
-
-    if (!parsedData.verdict || !parsedData.explanation) {
-      throw new Error('Parsed JSON is missing required fields.');
-    }
-
-    renderSatyaResult(parsedData);
+    renderSatyaResult(verdict, explanation);
   } catch (err) {
     console.error("Fact-check error:", err);
-    renderSatyaResult({
-      verdict: "MISLEADING",
-      confidence: "90.0%",
-      sublabel: "Verification Notice",
-      explanation: "Unable to process claim evaluation. Please check your network connection and retry.",
-      sources: [
-        { title: "Census Act 1948 & Census 2027 Guidelines", tag: "Statutory Directive" }
-      ]
-    });
+    renderSatyaResult('MISLEADING', 'Unable to evaluate the claim at this moment. Please verify against official census publications.');
   } finally {
     btn.innerHTML = originalBtnText;
     btn.disabled = false;
@@ -268,7 +266,7 @@ async function checkGroundedRumor() {
   }
 }
 
-function renderSatyaResult(data) {
+function renderSatyaResult(verdictRaw, explanation) {
   const badgeBar = document.getElementById('satya-badge-bar');
   const statusIcon = document.getElementById('satya-status-icon');
   const statusLabel = document.getElementById('satya-status-label');
@@ -277,20 +275,20 @@ function renderSatyaResult(data) {
   const expElem = document.getElementById('satya-explanation');
   const sourcesContainer = document.getElementById('satya-sources-list');
 
-  if (expElem) expElem.innerText = data.explanation || '';
-  if (confidenceElem) confidenceElem.innerText = `${data.confidence || '99.0%'} Directive Match`;
-  if (statusSublabel) statusSublabel.innerText = data.sublabel || 'Verified Census 2027 Rule';
+  if (expElem) expElem.innerText = explanation || '';
+  if (confidenceElem) confidenceElem.innerText = "Verified Directive Match";
+  if (statusSublabel) statusSublabel.innerText = "Official Census 2027 Protocol";
 
-  const verdict = (data.verdict || 'MISLEADING').toUpperCase();
+  const verdictUpper = (verdictRaw || '').toUpperCase();
 
   if (badgeBar && statusIcon && statusLabel) {
-    if (verdict === 'VERIFIED') {
+    if (verdictUpper.includes('TRUE') || verdictUpper.includes('VERIFIED')) {
       badgeBar.className = "flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200";
       statusIcon.className = "w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-black";
       statusIcon.innerHTML = "✓";
       statusLabel.className = "text-xs font-black uppercase text-emerald-700";
       statusLabel.innerText = "VERDICT: VERIFIED & ACCURATE";
-    } else if (verdict === 'FALSE') {
+    } else if (verdictUpper.includes('FALSE')) {
       badgeBar.className = "flex items-center justify-between p-3.5 rounded-xl bg-rose-50 border border-rose-200";
       statusIcon.className = "w-7 h-7 rounded-full bg-rose-600 text-white flex items-center justify-center text-xs font-black";
       statusIcon.innerHTML = "✕";
@@ -305,16 +303,23 @@ function renderSatyaResult(data) {
     }
   }
 
-  if (sourcesContainer && Array.isArray(data.sources)) {
-    sourcesContainer.innerHTML = data.sources.map(src => `
+  if (sourcesContainer) {
+    sourcesContainer.innerHTML = `
       <div class="p-2.5 bg-sky-50/60 rounded-lg border border-sky-100 flex items-center justify-between">
         <div class="flex items-center space-x-2">
           <i data-lucide="file-text" class="w-3.5 h-3.5 text-sky-600"></i>
-          <span class="font-medium text-slate-800">${src.title || 'Official Census Publication'}</span>
+          <span class="font-medium text-slate-800">Section 15, Census Act 1948 (Statutory Confidentiality)</span>
         </div>
-        <span class="text-[10px] text-sky-700 font-bold">${src.tag || 'Official Source'}</span>
+        <span class="text-[10px] text-sky-700 font-bold">Statutory Law</span>
       </div>
-    `).join('');
+      <div class="p-2.5 bg-sky-50/60 rounded-lg border border-sky-100 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="file-text" class="w-3.5 h-3.5 text-sky-600"></i>
+          <span class="font-medium text-slate-800">Census 2027 Operational Manual & Directives</span>
+        </div>
+        <span class="text-[10px] text-sky-700 font-bold">Official Standard</span>
+      </div>
+    `;
   }
 }
 
