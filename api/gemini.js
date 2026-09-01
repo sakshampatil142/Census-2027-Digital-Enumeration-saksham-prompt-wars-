@@ -20,22 +20,23 @@ export default async function handler(req, res) {
   if (!apiKey) {
     console.error('Server Configuration Error: GEMINI_API_KEY is not defined.');
     return res.status(500).json({ 
-      error: 'Server authentication configuration missing. Configure GEMINI_API_KEY in Vercel environment variables.' 
+      error: 'Server authentication configuration missing. Set GEMINI_API_KEY in Vercel environment variables.' 
     });
   }
 
   const model = 'gemini-1.5-flash';
-  const geminiBaseUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   try {
-    const { prompt, systemInstruction, image } = req.body || {};
+    const { prompt, systemInstruction, image, mode } = req.body || {};
 
-    if (!prompt || typeof prompt !== 'string') {
-      return res.status(400).json({ error: 'Invalid payload: "prompt" string is required.' });
+    if (!prompt && !image) {
+      return res.status(400).json({ error: 'Invalid payload: Prompt or image is required.' });
     }
 
     const userParts = [];
 
+    // Multimodal Image Handler (Base64 / Data URI)
     if (image && typeof image === 'string') {
       let mimeType = 'image/jpeg';
       let base64Data = image;
@@ -56,12 +57,14 @@ export default async function handler(req, res) {
       });
     }
 
-    userParts.push({ text: prompt });
+    if (prompt) {
+      userParts.push({ text: prompt });
+    }
 
     const payload = {
       contents: [{ role: 'user', parts: userParts }],
       generationConfig: {
-        temperature: 0.1,
+        temperature: 0.2,
         maxOutputTokens: 1024
       }
     };
@@ -72,7 +75,7 @@ export default async function handler(req, res) {
       };
     }
 
-    const upstreamResponse = await fetch(geminiBaseUrl, {
+    const upstreamResponse = await fetch(geminiEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -80,7 +83,7 @@ export default async function handler(req, res) {
 
     if (!upstreamResponse.ok) {
       const errorData = await upstreamResponse.json();
-      console.error('Gemini API Error:', errorData);
+      console.error('Gemini API Upstream Error:', errorData);
       return res.status(upstreamResponse.status).json({
         error: errorData.error?.message || 'Upstream provider error'
       });
